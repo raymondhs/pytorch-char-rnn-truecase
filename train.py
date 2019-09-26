@@ -1,3 +1,12 @@
+'''
+
+This file trains a character-level multi-layer RNN on text data
+
+Code is converted to PyTorch from the Lua implementation in 
+https://github.com/karpathy/char-rnn/blob/master/train.lua
+
+'''
+
 import argparse
 import os
 import time
@@ -61,6 +70,7 @@ if opt.gpuid >= 0 and torch.cuda.is_available():
     device = torch.device('cuda', opt.gpuid)
 else:
     print('Falling back on CPU mode')
+    opt.gpuid = -1 # overwrite user setting
     device = torch.device("cpu")
 
 # create the data loader class
@@ -98,7 +108,7 @@ else:
     #     protos.rnn = GRU(vocab_size, opt.rnn_size, opt.num_layers, opt.dropout)
     # elif opt.model == 'rnn':
     #     protos.rnn = RNN(vocab_size, opt.rnn_size, opt.num_layers, opt.dropout)
-    protos.criterion = nn.CrossEntropyLoss(reduction='mean')
+    protos.criterion = nn.NLLLoss(reduction='mean')
 
 # the initial state of the cell/hidden states
 init_state = protos.rnn.init_hidden(opt.batch_size, device)

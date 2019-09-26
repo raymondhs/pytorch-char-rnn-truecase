@@ -14,13 +14,16 @@ class LSTM(nn.Module):
         self.lstm = nn.LSTM(input_size, rnn_size, num_layers, dropout=dropout)
         self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(rnn_size, input_size)
+        self.softmax = nn.LogSoftmax(dim=-1)
     
     def forward(self, input, hidden):
+        input = F.one_hot(input, self.input_size).float()
         output, hidden = self.lstm(input, hidden)
         output = self.dropout(output)
         output = self.fc(output)
+        output = self.softmax(output)
         return output, hidden
 
     def init_hidden(self, batch_size, device):
-        return (torch.zeros(self.num_layers, batch_size, self.rnn_size).to(device),
-                torch.zeros(self.num_layers, batch_size, self.rnn_size).to(device))
+        return (torch.zeros(self.num_layers, batch_size, self.rnn_size, device=device),
+                torch.zeros(self.num_layers, batch_size, self.rnn_size, device=device))

@@ -4,7 +4,6 @@ import os
 import sys
 
 import torch
-import torch.nn.functional as F
 
 
 class CharSplitLMMinibatchLoader(object):
@@ -64,11 +63,11 @@ class CharSplitLMMinibatchLoader(object):
         # load val data
         if self.has_val_data:
             val_data = torch.load(val_tensor_file)
-            length = val_data.size(1)
+            length = val_data.size(0)
             if length % (batch_size * seq_length) != 0:
                 print('cutting off end of data so that the batches/sequences divide evenly')
                 val_data = val_data[:batch_size * seq_length 
-                            * math.floor(len / (batch_size * seq_length))]
+                            * math.floor(length / (batch_size * seq_length))]
         
         # count vocab
         self.vocab_size = len(self.vocab_mapping)
@@ -78,18 +77,12 @@ class CharSplitLMMinibatchLoader(object):
         self.batch_size = batch_size
         self.seq_length = seq_length
 
-        def one_hot_encoder(batch):
-            # the RNN model accepts float tensor as input
-            return F.one_hot(batch, self.vocab_size).float()
-
         ydata = data.clone()
         ydata[:-1] = data[1:]
         ydata[-1] = data[0]
         self.x_batches = data.view(batch_size, -1).split(seq_length, 1)  # #rows = #batches
         self.nbatches = len(self.x_batches)
         self.y_batches = ydata.view(batch_size, -1).split(seq_length, 1)  # #rows = #batches
-        # convert x to one-hot encoding
-        self.x_batches = list(map(one_hot_encoder, self.x_batches))
         assert len(self.x_batches) == len(self.y_batches)
 
         # same thing for val data
@@ -100,7 +93,6 @@ class CharSplitLMMinibatchLoader(object):
             self.val_x_batches = val_data.view(batch_size, -1).split(seq_length, 1)  # #rows = #batches
             self.val_nbatches = len(self.val_x_batches)
             self.val_y_batches = val_ydata.view(batch_size, -1).split(seq_length, 1)  # #rows = #batches
-            self.val_x_batches = list(map(one_hot_encoder, self.val_x_batches))
             assert len(self.val_x_batches) == len(self.val_y_batches)
 
         # lets try to be helpful here
@@ -203,13 +195,3 @@ class CharSplitLMMinibatchLoader(object):
         # save output preprocessed files
         print('saving {}'.format(out_tensorfile))
         torch.save(data, out_tensorfile)
-
-
-if __name__ == '__main__':
-    loader = CharSplitLMMinibatchLoader.create('data/tinyshakespeare', 50, 50, [0.95, 0.05, 0])
-    loader.reset_batch_pointer(0, -1)
-    train_X, train_y = loader.next_batch(0)
-    print(train_X.shape, train_y.shape)
-    loader.reset_batch_pointer(1, -1)
-    valid_X, valid_y = loader.next_batch(1)
-    print(valid_X.shape, valid_y.shape)
