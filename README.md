@@ -7,23 +7,38 @@ This code is a PyTorch implementation of a character-level RNN for truecasing. T
 * PyTorch version >= 1.1.0
 * Python version >= 3.5
 
-Scripts for training and evaluation are provided. They can be run as follows:
+Below example shows training and truecasing on the Wikipedia data set. Refer to `train.sh` and `test.sh` for running the experiments in the paper.
+
+### Training
 
 ```
-bash (train|test).sh <corpus> (lstm|gru) (small|large) <gpuid>
+python train.py \
+-data_dir data/wiki \
+-model lstm \
+-rnn_size 700 \
+-num_layers 3 \
+-dropout 0.25 \
+-batch_size 100 \
+-seq_length 50 \
+-max_epochs 30 \
+-learning_rate 0.001 \
+-checkpoint_dir cv/wiki_lstm_700hidden_3layer \
+-gpuid 0
 ```
 
-`<corpus>` is one of the following: `wiki`, `wsj`, `conll_eng`, `conll_deu`. Data splits should be put in `data/<corpus>` and named: `input.txt` (train), `val_input.txt` (tune), `test_lower.txt` (test, lowercased). Only Wikipedia data is uploaded (same splits as [William Coster and David Kauchak (2011)](http://www.cs.pomona.edu/~dkauchak/simplification/data.v1/data.v1.split.tar.gz)). The remaining datasets should be obtained from their respective sources in LDC.  For example, issue the following commands to train and evaluate LSTM-Large on Wikipedia using GPU0:
+### Truecasing
 
 ```
-bash train.sh wiki lstm large 0
-bash test.sh wiki lstm large 0
-```
+# retrieve best checkpoint on valid data
+model=`ls cv/wiki_lstm_700hidden_3layer/*.pt | python best_model.py`
 
-The truecased file can be found in `cv/wiki_lstm_700hidden_3layer/output.txt`. For evaluation, use `word_eval.py` to compute accuracy and F1-score:
-
-```
-python word_eval.py <gold file> <output file>
+cat data/wiki/test.lower.txt \
+| python truecase.py \
+  $model \
+  -beamsize 10 \
+  -verbose 0 \
+  -gpuid 0 \
+> data/wiki/output.txt
 ```
 
 ## References
