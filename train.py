@@ -174,7 +174,7 @@ def eval_split(split_index, max_batches=None):
             rnn.eval()
             predictions, rnn_state = rnn(x, rnn_state)
             loss += criterion(predictions.view(-1, vocab_size), y.view(-1))
-            print('{}/{}'.format(i,n))
+            print('{}/{}...'.format(i,n))
 
         loss = loss / n
         return loss

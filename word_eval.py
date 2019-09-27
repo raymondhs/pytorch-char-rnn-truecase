@@ -1,10 +1,9 @@
-import sys, codecs
+import sys
 
-gold = sys.argv[1]
-pred = sys.argv[2]
-
-gold_sent = codecs.open(gold,'r',encoding='utf8').readlines()
-pred_sent = codecs.open(pred,'r',encoding='utf8').readlines()
+with open(sys.argv[1], encoding='utf-8') as gold, \
+     open(sys.argv[2], encoding='utf-8') as pred:
+    gold_sent = gold.readlines()
+    pred_sent = pred.readlines()
 
 num_correct = 0
 num_changed_correct = 0
@@ -33,8 +32,7 @@ except:
     P = 0
     R = 0
     F = 0
-print('Accuracy: %.2f' % acc)
-print('Precision: %.2f' % (P*100))
-print('Recall: %.2f' % (R*100))
-print('F1: %.2f' % (F*100))
-print('%.2f & %.2f & %.2f & %.2f' % (acc, P*100, R*100, F*100))
+print('Accuracy: {:.2f}'.format(acc))
+print('Precision: {:.2f}'.format(P*100))
+print('Recall: {:.2f}'.format(R*100))
+print('F1: {:.2f}'.format(F*100))

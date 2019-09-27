@@ -160,7 +160,7 @@ class CharSplitLMMinibatchLoader(object):
 
         print('loading text file...{}'.format(in_textfile))
         cache_len = 10000
-        with open(in_textfile) as f:
+        with open(in_textfile, encoding='utf-8') as f:
             rawdata = f.read()
         length = len(rawdata)
         vocab_mapping = {}
