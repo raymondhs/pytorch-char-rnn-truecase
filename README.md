@@ -7,7 +7,7 @@ This code is a PyTorch implementation of a character-level LSTM for truecasing. 
 * PyTorch version >= 1.1.0
 * Python version >= 3.5
 
-Below example shows training and truecasing on the Wikipedia data set. Refer to `train.sh` and `test.sh` for running the experiments in the paper.
+Below example shows training and truecasing on the Wikipedia data set. Refer to `train.sh` and `test.sh` for running the experiments in the paper (only LSTM is supported).
 
 ### Training
 
