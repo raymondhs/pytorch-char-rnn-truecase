@@ -48,7 +48,7 @@ torch.manual_seed(opt.seed)
 
 # load the model checkpoint
 if not os.path.exists(opt.model):
-  gprint("Error: File {} does not exist. Are you sure you didn't forget to prepend cv/ ?".format(opt.model))
+    gprint("Error: File {} does not exist. Are you sure you didn't forget to prepend cv/ ?".format(opt.model))
 checkpoint = torch.load(opt.model)
 protos = checkpoint.protos
 protos.rnn.to(device)
@@ -117,16 +117,13 @@ def beam_search_decoder(s, k, progress_bar=True):
 if opt.sent:
     gprint('performing sentence-level truecasing...')
     gprint('memory will be reset after every line')
-else:
-    gprint('performing document-level truecasing...')
-    gprint('memory is carried over to the next line')
-
-if opt.sent:
     lines = sys.stdin.readlines()
     for line in tqdm(lines, desc="num lines"):
         # truecase line by line
         print(beam_search_decoder('\n' + line.rstrip(), opt.beamsize), progress_bar=False)
 else:
+    gprint('performing document-level truecasing...')
+    gprint('memory is carried over to the next line')
     lines = sys.stdin.read()
     # truecase whole text at once
     print(beam_search_decoder('\n' + lines.rstrip(), opt.beamsize))
