@@ -56,23 +56,22 @@ protos.rnn.eval() # put in eval mode so that dropout works properly
 
 # initialize the vocabulary (and its inverted version)
 vocab = checkpoint.vocab
-vocab_size = len(vocab)
-
-for i,c in enumerate(vocab):
-    gprint(c+" "+str(i))
 
 #initialize the rnn state to all zeros
-gprint('creating an {}...'.format(checkpoint.opt.model))
+gprint('creating an lstm...')
 current_state = checkpoint.protos.rnn.init_hidden(1, device)
 
-def beam_search_decoder(s, k):
+def beam_search_decoder(s, k, progress_bar=True):
     with torch.no_grad():
         h, c = current_state
         h, c = h.clone().squeeze(), c.clone().squeeze()
         sequences = [[s[0], (h, c), 0.]]
 
         # iterate over each character
-        for t in tqdm(range(1, len(s))):
+        progress = range(1, len(s))
+        if progress_bar:
+            progress = tqdm(progress, desc="num characters")
+        for t in progress:
             all_candidates = []
 
             # treat the candidates in the beam as one batch
@@ -96,7 +95,7 @@ def beam_search_decoder(s, k):
 
             # expand each current candidate
             for i in range(len(sequences)):
-                seq, state, score = sequences[i]
+                seq, _, score = sequences[i]
                 next_chars = [s[t]]
                 if s[t].upper() != s[t]:
                     next_chars.append(s[t].upper())
@@ -122,15 +121,12 @@ else:
     gprint('performing document-level truecasing...')
     gprint('memory is carried over to the next line')
 
-input_text = ''
-while True:
-    line = sys.stdin.readline()
-    if not line: break
-    line = line.rstrip()
-    input_text = input_text + '\n' + line # newline as start token
-    if opt.sent: # truecase each line
-        print(beam_search_decoder(input_text, opt.beamsize))
-        input_text = ''
-
-if not opt.sent: # truecase the whole text at once
-    print(beam_search_decoder(input_text, opt.beamsize))
+if opt.sent:
+    lines = sys.stdin.readlines()
+    for line in tqdm(lines, desc="num lines"):
+        # truecase line by line
+        print(beam_search_decoder('\n' + line.rstrip(), opt.beamsize), progress_bar=False)
+else:
+    lines = sys.stdin.read()
+    # truecase whole text at once
+    print(beam_search_decoder('\n' + lines.rstrip(), opt.beamsize))

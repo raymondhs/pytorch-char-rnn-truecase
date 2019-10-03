@@ -3,22 +3,20 @@ set -e -x
 # wiki, wsj, conll_eng, conll_deu
 prefix=$1 
 
-# lstm, gru
-model=$2
-
 # small, large
-size=$3
+size=$2
 
 # >= 0 for GPU, -1 for CPU
-gpu=$4
+gpu=$3
 
-if [ "$#" -ne 4 ] ; then
-  echo "Usage: $0 <corpus> [lstm|gru] [small|large] <gpuid>" >&2
+if [ "$#" -ne 3 ] ; then
+  echo "Usage: $0 <corpus> [small|large] <gpuid>" >&2
   exit 1
 fi
 
 data=data/$prefix
 testdata=$data/test.lower.txt
+model=lstm
 rnn=300
 layer=2
 if [ $size = "large" ]; then

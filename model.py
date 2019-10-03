@@ -7,6 +7,7 @@ class LSTM(nn.Module):
     
     def __init__(self, input_size, rnn_size, num_layers, dropout):
         super(LSTM, self).__init__()
+        
         self.input_size = input_size
         self.rnn_size = rnn_size
         self.num_layers = num_layers

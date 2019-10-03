@@ -16,8 +16,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from model.LSTM import LSTM
-from util.CharSplitLMMinibatchLoader import CharSplitLMMinibatchLoader
+from data_loader import CharSplitLMMinibatchLoader
+from model import LSTM
+from util import copy_state
 
 
 parser = argparse.ArgumentParser(description='Train a character-level language model')
@@ -27,7 +28,6 @@ parser.add_argument('-data_dir', default='data/tinyshakespeare',
 # model params
 parser.add_argument('-rnn_size', type=int, default=128, help='size of LSTM internal state')
 parser.add_argument('-num_layers', type=int, default=2, help='number of layers in the LSTM')
-parser.add_argument('-model', default='lstm', help='lstm,gru or rnn')
 # optimization
 parser.add_argument('-learning_rate', type=float, default=2e-3, help='learning rate')
 parser.add_argument('-learning_rate_decay', type=float, default=0.97, help='learning rate decay')
@@ -100,14 +100,9 @@ if opt.init_from:
     opt.num_layers = checkpoint.opt.num_layers
     do_random_init = False
 else:
-    print('creating an {} with {} layers '.format(opt.model, opt.num_layers))
+    print('creating an lstm with {} layers '.format(opt.num_layers))
     protos = SimpleNamespace()
-    if opt.model == 'lstm':
-        protos.rnn = LSTM(vocab_size, opt.rnn_size, opt.num_layers, opt.dropout)
-    # elif opt.model == 'gru':
-    #     protos.rnn = GRU(vocab_size, opt.rnn_size, opt.num_layers, opt.dropout)
-    # elif opt.model == 'rnn':
-    #     protos.rnn = RNN(vocab_size, opt.rnn_size, opt.num_layers, opt.dropout)
+    protos.rnn = LSTM(vocab_size, opt.rnn_size, opt.num_layers, opt.dropout)
     protos.criterion = nn.NLLLoss(reduction='mean')
 
 # the initial state of the cell/hidden states
@@ -124,15 +119,14 @@ if do_random_init:
         nn.init.uniform_(weight, -0.08, 0.08) # small uniform numbers
 # initialize the LSTM forget gates with slightly higher biases to encourage remembering in the beginning
 # reference: https://discuss.pytorch.org/t/set-forget-gate-bias-of-lstm/1745/4
-if opt.model == 'lstm':
-    l = protos.rnn.lstm
-    for names in l._all_weights:
-        for name in filter(lambda n: "bias_ih" in n, names):
-            print('setting forget gate biases {} to 1'.format(name))
-            bias = getattr(l, name)
-            n = bias.size(0)
-            start, end = n//4, n//2
-            bias.data[start:end].fill_(1.)
+l = protos.rnn.lstm
+for names in l._all_weights:
+    for name in filter(lambda n: "bias_ih" in n, names):
+        print('setting forget gate biases {} to 1'.format(name))
+        bias = getattr(l, name)
+        n = bias.size(0)
+        start, end = n//4, n//2
+        bias.data[start:end].fill_(1.)
 
 num_params = sum(p.numel() for p in protos.rnn.parameters())
 print('number of parameters in the model: {}'.format(num_params))
@@ -145,11 +139,6 @@ def prepro(x,y):
         x = x.to(device)
         y = y.to(device)
     return x,y
-
-def copy_state(state, do_clone=True):
-    if do_clone:
-        return (state[0].clone().detach(), state[1].clone().detach())
-    return (state[0].detach(), state[1].detach())
 
 init_state_global = copy_state(init_state)
 rnn = protos.rnn
@@ -198,6 +187,7 @@ def train():
     
     # transfer final state to initial state (BPTT)
     init_state_global = copy_state(rnn_state, False)
+
     # clip gradient element-wise
     nn.utils.clip_grad_value_(rnn.parameters(), opt.grad_clip)
 
